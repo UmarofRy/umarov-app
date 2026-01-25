@@ -6,16 +6,16 @@ import {
   FileText, Trash2, Edit2, Settings, List, Lock, Globe, Mic, Check, Keyboard,
   User, Shield, LogOut, Activity, Users, CreditCard, Monitor, Key, Filter,
   UserCheck, UserX, Crown, Timer, Minus, LogIn, BadgeCheck, Copyright,
-  Download, Share, Sparkles
+  Download, Share, Sparkles, MoveRight
 } from "lucide-react";
 
 /**
- * FLASHCARDS: ULTIMATE EDITION v7.3 (CDN FIX)
+ * FLASHCARDS: ULTIMATE EDITION v7.6 (CREATIVE CSS OVERHAUL)
  * Created for: Umarov
- * Updated: 2026-01-22
+ * Updated: 2026-01-25
  * * UPDATE LOG:
- * - Changed XLSX library CDN to cdnjs for better stability (Fixed QUIC error)
- * - Restored typing validation logic
+ * - Added Global Creative CSS (Blobs, Glassmorphism, Neon Glow).
+ * - Enhanced UI for Manager, Dashboard, and Learning views.
  */
 
 // --- UTILS & AUDIO ---
@@ -195,6 +195,13 @@ const App = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
 
+  // --- SWIPE STATE ---
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Timer Ref
+  const timerRef = useRef(null);
+
   // --- TIMER EFFECT ---
   useEffect(() => {
     let interval = null;
@@ -264,6 +271,53 @@ const App = () => {
     checkAccess(); 
     return () => clearInterval(interval);
   }, [user, globalSettings, isAdmin]);
+
+  // --- SWIPE LOGIC START ---
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe) {
+       handleIntroNextSwipe();
+    }
+    if (isRightSwipe) {
+       handleIntroPrevSwipe();
+    }
+  };
+
+  const handleIntroNextSwipe = () => {
+      const nextIndex = introState.index + 1;
+      if (nextIndex < queue.length) {
+        setIntroState({ index: nextIndex, step: 1 });
+        setCurrentCard(queue[nextIndex]);
+        speak(queue[nextIndex].en);
+        playSound("click");
+      } else {
+        nextStage();
+      }
+  };
+
+  const handleIntroPrevSwipe = () => {
+      const prevIndex = introState.index - 1;
+      if (prevIndex >= 0) {
+        setIntroState({ index: prevIndex, step: 1 });
+        setCurrentCard(queue[prevIndex]);
+        // speak(queue[prevIndex].en); 
+        playSound("click");
+      }
+  };
+  // --- SWIPE LOGIC END ---
 
   const triggerShake = () => {
     setIsShaking(true);
@@ -526,20 +580,7 @@ const App = () => {
     }
   };
 
-  const handleIntroNext = () => {
-    if (introState.step === 1) {
-      setIntroState(prev => ({ ...prev, step: 2 }));
-    } else {
-      const nextIndex = introState.index + 1;
-      if (nextIndex < queue.length) {
-        setIntroState({ index: nextIndex, step: 1 });
-        setCurrentCard(queue[nextIndex]);
-        speak(queue[nextIndex].en);
-      } else {
-        nextStage();
-      }
-    }
-  };
+  // handleIntroNext o'chirildi, o'rniga handleIntroNextSwipe ishlatiladi
 
   const handleTypingSubmit = (e) => {
     e.preventDefault();
@@ -636,9 +677,9 @@ const App = () => {
       setTimeout(() => {
          const idx = queue.indexOf(currentCard);
          if (idx < queue.length - 1) {
-            setupQuizCard(queue[idx + 1], queue);
+           setupQuizCard(queue[idx + 1], queue);
          } else {
-            nextStage();
+           nextStage();
          }
       }, 600);
     } else {
@@ -785,27 +826,27 @@ const App = () => {
 
   // --- RENDERERS ---
   const renderManager = () => (
-    <div className="flex-1 flex flex-col p-6 max-w-lg mx-auto w-full animate-fade-in space-y-6">
+    <div className="flex-1 flex flex-col p-6 max-w-lg mx-auto w-full animate-fade-in space-y-6 relative z-10">
       <div className="text-center mb-4 relative group animate-pop-in">
         <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 mb-2 tracking-tighter animate-float cursor-default select-none drop-shadow-2xl">UMAROV.A</h1>
         <p className="text-slate-400 text-sm tracking-widest uppercase">Fayl Menejeri (Offline Mode)</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <label className="bg-slate-800/80 backdrop-blur-md p-6 rounded-3xl border-2 border-dashed border-slate-700 hover:border-blue-500 hover:bg-slate-800 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group hover:scale-[1.02] active:scale-95 animate-slide-up stagger-1">
+        <label className="glass p-6 rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group hover:scale-[1.02] active:scale-95 animate-slide-up stagger-1 hover:border-blue-500/50">
           <div className="p-3 bg-blue-500/10 rounded-full mb-3 group-hover:bg-blue-500/20 transition-colors"><Upload className="text-blue-400 group-hover:scale-110 transition-transform duration-300" size={32} /></div>
           <span className="text-xs font-bold text-slate-300 group-hover:text-white">XLS Yuklash</span>
           <input type="file" accept=".xlsx" className="hidden" onChange={handleFileUpload} />
         </label>
-        <button onClick={createManualFile} className="bg-slate-800/80 backdrop-blur-md p-6 rounded-3xl border-2 border-dashed border-slate-700 hover:border-emerald-500 hover:bg-slate-800 flex flex-col items-center justify-center transition-all duration-300 group hover:scale-[1.02] active:scale-95 animate-slide-up stagger-2">
+        <button onClick={createManualFile} className="glass p-6 rounded-3xl flex flex-col items-center justify-center transition-all duration-300 group hover:scale-[1.02] active:scale-95 animate-slide-up stagger-2 hover:border-emerald-500/50">
           <div className="p-3 bg-emerald-500/10 rounded-full mb-3 group-hover:bg-emerald-500/20 transition-colors"><Plus className="text-emerald-400 group-hover:rotate-90 transition-transform duration-300" size={32} /></div>
           <span className="text-xs font-bold text-slate-300 group-hover:text-white">Yangi Fayl</span>
         </button>
       </div>
       <div className="flex-1 overflow-y-auto space-y-3 min-h-[300px] custom-scrollbar pb-4">
         {Object.values(files).map((f, idx) => (
-          <div key={f.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex justify-between items-center group hover:border-indigo-500 hover:bg-slate-800 transition-all duration-300 animate-slide-up" style={{animationDelay: `${(idx+3)*0.1}s`}}>
+          <div key={f.id} className="glass p-4 rounded-2xl flex justify-between items-center group hover:bg-slate-800/60 transition-all duration-300 animate-slide-up" style={{animationDelay: `${(idx+3)*0.1}s`}}>
             <div onClick={() => { setActiveFileId(f.id); setView("dashboard"); }} className="flex-1 cursor-pointer">
-              <h3 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">{f.name}</h3>
+              <h3 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors glow-text">{f.name}</h3>
               <p className="text-xs text-slate-500 flex items-center gap-1"><FileText size={10}/> {f.words.length} ta so'z</p>
             </div>
             <div className="flex gap-2">
@@ -817,7 +858,7 @@ const App = () => {
       </div>
       {editingFile && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-700 p-6 shadow-2xl animate-pop-in">
+          <div className="glass w-full max-w-md rounded-3xl p-6 shadow-2xl animate-pop-in bg-slate-900/80">
             <div className="flex justify-between mb-4 items-center">
                <h3 className="font-bold text-xl text-white">Tahrirlash</h3>
                <button onClick={() => setEditingFile(null)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition"><X size={18}/></button>
@@ -842,15 +883,15 @@ const App = () => {
   );
 
   const renderDashboard = () => (
-    <div className="flex-1 flex flex-col p-4 w-full max-w-lg mx-auto animate-fade-in h-full overflow-hidden">
+    <div className="flex-1 flex flex-col p-4 w-full max-w-lg mx-auto animate-fade-in h-full overflow-hidden relative z-10">
       <div className="flex justify-between items-center mb-6 z-10">
-        <button onClick={() => setView("manager")} className="p-3 bg-slate-800/80 backdrop-blur rounded-2xl hover:bg-slate-700 transition active:scale-95 border border-slate-700"><List size={20} className="text-white"/></button>
-        <h2 className="text-lg font-black truncate max-w-[150px] text-white tracking-tight">{files[activeFileId].name}</h2>
-        <button onClick={() => setView("translator")} className="p-3 bg-slate-800/80 backdrop-blur rounded-2xl hover:bg-slate-700 transition active:scale-95 border border-slate-700"><Globe size={20} className="text-white"/></button>
+        <button onClick={() => setView("manager")} className="glass p-3 rounded-2xl hover:bg-white/10 transition active:scale-95"><List size={20} className="text-white"/></button>
+        <h2 className="text-lg font-black truncate max-w-[150px] text-white tracking-tight glow-text">{files[activeFileId].name}</h2>
+        <button onClick={() => setView("translator")} className="glass p-3 rounded-2xl hover:bg-white/10 transition active:scale-95"><Globe size={20} className="text-white"/></button>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-8 pb-24">
         <section>
-          <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 pl-1">Smart Learning</h3>
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4 pl-1">Smart Learning</h3>
           <div className="grid grid-cols-2 gap-3">
             {Array.from({length: Math.ceil(files[activeFileId].words.length / GROUP_SIZE)}).map((_, i) => {
               const activeFile = files[activeFileId];
@@ -864,12 +905,12 @@ const App = () => {
                   onClick={() => !isLocked && startGroup(i)} 
                   disabled={isLocked}
                   style={{animationDelay: `${i * 0.05}s`}}
-                  className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden group animate-slide-up
+                  className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden group animate-slide-up glass
                     ${isLocked 
-                      ? 'bg-slate-900/50 border-slate-800 opacity-50 grayscale' 
+                      ? 'opacity-50 grayscale bg-slate-900/50' 
                       : isCompleted 
-                        ? 'bg-emerald-900/10 border-emerald-500/30 hover:bg-emerald-900/20'
-                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-1'
+                        ? 'bg-emerald-900/20 border-emerald-500/30 hover:bg-emerald-900/30'
+                        : 'hover:bg-white/5 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-1'
                     }
                   `}
                 >
@@ -886,24 +927,24 @@ const App = () => {
         <section>
           <h3 className="text-amber-500 text-xs font-bold uppercase tracking-widest mb-4 pl-1 flex items-center gap-2"><Sparkles size={14} className="fill-amber-500" /> Premium Arcade</h3>
           <div className="space-y-4">
-             <button onClick={() => startArcade("timeAttack")} className="w-full bg-gradient-to-r from-blue-900/50 to-slate-900 p-1 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group animate-slide-up" style={{animationDelay: '0.1s'}}>
-               <div className="bg-slate-900 p-4 rounded-xl flex items-center gap-4 h-full relative overflow-hidden">
-                 <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition-all"></div>
+             <button onClick={() => startArcade("timeAttack")} className="w-full bg-gradient-to-r from-blue-900/40 to-slate-900/40 p-1 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group animate-slide-up glass border-0" style={{animationDelay: '0.1s'}}>
+               <div className="bg-slate-900/50 p-4 rounded-xl flex items-center gap-4 h-full relative overflow-hidden backdrop-blur-sm">
+                 <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/30 transition-all"></div>
                  <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 group-hover:rotate-12 transition-transform"><Clock size={24} /></div>
                  <div><div className="font-bold text-white text-lg">Time Attack</div><div className="text-xs text-slate-400 font-medium">30 soniya, maksimal ball</div></div>
                </div>
              </button>
              
-             <button onClick={() => startArcade("wordHunt")} className="w-full bg-gradient-to-r from-emerald-900/50 to-slate-900 p-1 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group animate-slide-up" style={{animationDelay: '0.2s'}}>
-               <div className="bg-slate-900 p-4 rounded-xl flex items-center gap-4 h-full relative overflow-hidden">
-                 <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-all"></div>
+             <button onClick={() => startArcade("wordHunt")} className="w-full bg-gradient-to-r from-emerald-900/40 to-slate-900/40 p-1 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group animate-slide-up glass border-0" style={{animationDelay: '0.2s'}}>
+               <div className="bg-slate-900/50 p-4 rounded-xl flex items-center gap-4 h-full relative overflow-hidden backdrop-blur-sm">
+                 <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/30 transition-all"></div>
                  <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400 group-hover:scale-110 transition-transform"><Search size={24} /></div>
                  <div><div className="font-bold text-white text-lg">Word Hunt</div><div className="text-xs text-slate-400 font-medium">To'g'ri tarjimani toping</div></div>
                </div>
              </button>
 
-             <button onClick={() => startArcade("boss")} className="w-full bg-gradient-to-r from-red-600 to-red-900 p-[2px] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group shadow-lg shadow-red-900/30 animate-slide-up" style={{animationDelay: '0.3s'}}>
-               <div className="bg-gradient-to-r from-red-950 to-black p-5 rounded-2xl flex items-center justify-between h-full relative overflow-hidden">
+             <button onClick={() => startArcade("boss")} className="w-full bg-gradient-to-r from-red-600/40 to-red-900/40 p-[2px] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group shadow-lg shadow-red-900/30 animate-slide-up glass border-0" style={{animationDelay: '0.3s'}}>
+               <div className="bg-gradient-to-r from-red-950/80 to-black/80 p-5 rounded-2xl flex items-center justify-between h-full relative overflow-hidden backdrop-blur-sm">
                  <div className="relative z-10 flex items-center gap-4">
                    <div className="p-3 bg-red-600 rounded-xl text-white shadow-lg shadow-red-600/50 group-hover:animate-pulse"><ShieldAlert size={28} /></div>
                    <div>
@@ -921,56 +962,67 @@ const App = () => {
   );
 
   const renderSmartLearning = () => (
-    <div className="flex-1 flex flex-col h-full w-full max-w-lg mx-auto relative overflow-hidden">
-      <div className="flex justify-between items-center p-4 bg-slate-950/80 backdrop-blur z-10 sticky top-0">
+    <div className="flex-1 flex flex-col h-full w-full max-w-lg mx-auto relative overflow-hidden z-10">
+      <div className="flex justify-between items-center p-4 glass rounded-b-3xl z-20 sticky top-0 mx-4 mt-2">
          <div className="flex flex-col">
             <span className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Learning</span>
             <span className="font-black text-white text-xl uppercase tracking-tighter">{stage.replace('_', ' ')}</span>
          </div>
-         <button onClick={() => setView("dashboard")} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition active:scale-90"><X size={20} className="text-slate-300"/></button>
+         <button onClick={() => setView("dashboard")} className="p-2 bg-slate-800/50 rounded-full hover:bg-slate-700 transition active:scale-90"><X size={20} className="text-slate-300"/></button>
       </div>
       <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col">
-         {/* INTRO */}
+         {/* INTRO - UPDATED DESIGN WITH SWIPE */}
          {stage === "intro" && (
-           <div className="flex-1 flex flex-col items-center justify-center p-6 animate-fade-in text-center relative">
-             <div className="w-full max-w-xs flex-1 flex flex-col justify-center relative z-10">
-                <div className="relative mb-8">
-                   <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full scale-150 animate-pulse-slow"></div>
-                   {introState.step === 1 ? (
-                      <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl animate-pop-in">
-                        <div className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">English</div>
-                        <h2 className="text-5xl font-black text-white mb-6 break-words leading-tight">{currentCard?.en}</h2>
-                        <button onClick={() => speak(currentCard?.en)} className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-90 transition-all shadow-lg shadow-indigo-600/30 mx-auto"><Volume2 size={32} /></button>
-                      </div>
-                   ) : (
-                      <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl animate-pop-in">
-                         <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Uzbek</div>
-                         <h2 className="text-4xl font-black text-white mb-4 leading-tight">{currentCard?.uz}</h2>
-                         <div className="h-px w-full bg-slate-800 my-4"></div>
-                         <p className="text-xl text-indigo-400 font-bold opacity-80">{currentCard?.en}</p>
-                      </div>
-                   )}
+            <div 
+                className="flex-1 flex flex-col items-center justify-center p-4 animate-fade-in relative w-full h-full"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+            >
+                {/* Swipe Hint */}
+                <div className="absolute top-4 text-slate-500 text-xs animate-pulse flex items-center gap-2">
+                    <MoveRight className="text-slate-600" size={14}/> Surish 
                 </div>
-             </div>
-             
-             {/* Pagination Dots */}
-             <div className="flex gap-2 mb-8 z-10">
-               {queue.map((_, idx) => (
-                 <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === introState.index ? 'w-8 bg-indigo-500' : 'w-2 bg-slate-800'}`}></div>
-               ))}
-             </div>
 
-             <button onClick={handleIntroNext} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black text-lg shadow-xl shadow-white/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 z-10">
-               {introState.step === 1 ? "Tarjima" : "Keyingisi"} <ArrowRight size={24} />
-             </button>
-           </div>
+                <div className="flex-1 w-full max-w-sm flex flex-col gap-4 justify-center py-4">
+                     {/* Uzbek Card (Top) */}
+                     <div className="flex-1 glass rounded-3xl p-6 flex flex-col items-center justify-center shadow-lg relative overflow-hidden group animate-slide-up">
+                         {/* Decorative bg */}
+                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                         <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-2 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Uzbek</span>
+                         <h2 className="text-3xl sm:text-5xl font-black text-white text-center break-words glow-text">{currentCard?.uz}</h2>
+                     </div>
+
+                     {/* English Card (Bottom) */}
+                     <div className="flex-1 bg-gradient-to-br from-indigo-900/60 to-slate-900/60 glass border-indigo-500/30 rounded-3xl p-6 flex flex-col items-center justify-center shadow-lg relative overflow-hidden animate-slide-up" style={{animationDelay: '0.1s'}}>
+                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
+                         <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20">English</span>
+                         <h2 className="text-3xl sm:text-5xl font-black text-white text-center mb-6 break-words glow-text">{currentCard?.en}</h2>
+                         
+                         {/* Audio Button */}
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); speak(currentCard?.en); }}
+                            className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-90 transition-all shadow-lg shadow-indigo-600/30 z-20"
+                         >
+                            <Volume2 size={28} />
+                         </button>
+                     </div>
+                </div>
+
+                {/* Pagination/Progress */}
+                <div className="mt-2 mb-4 flex gap-1.5 justify-center flex-wrap max-w-[80%] z-20">
+                     {queue.map((_, idx) => (
+                        <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === introState.index ? 'w-6 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'w-1.5 bg-slate-700'}`}></div>
+                     ))}
+                </div>
+            </div>
          )}
          
          {/* MATCH */}
          {stage === "match" && (
            <div className="flex-1 grid grid-cols-2 gap-3 content-center p-4 animate-fade-in max-w-sm mx-auto w-full">
               {matchCards.map((card, i) => {
-                let statusClass = "bg-slate-900 border-slate-800 hover:border-slate-600 text-slate-300";
+                let statusClass = "glass hover:border-slate-500 text-slate-300";
                 if (matchSelected === card.uid) statusClass = "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/40 scale-105";
                 
                 // NEW: Visual feedback for Match
@@ -1001,16 +1053,16 @@ const App = () => {
            <div className="flex-1 flex flex-col p-6 animate-fade-in relative">
               <div className="flex-1 flex items-center justify-center relative z-10">
                  <div className="w-full text-center">
-                    <div className="inline-block p-4 bg-slate-900 border border-slate-700 rounded-3xl mb-8 shadow-2xl relative">
+                    <div className="inline-block p-4 glass rounded-3xl mb-8 shadow-2xl relative">
                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[26px] opacity-20 blur-lg"></div>
                        <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest block mb-1">Translate</span>
-                       <h2 className="text-4xl font-black text-white relative z-10">{currentCard?.en}</h2>
+                       <h2 className="text-4xl font-black text-white relative z-10 glow-text">{currentCard?.en}</h2>
                     </div>
                  </div>
               </div>
               <div className="flex flex-col gap-3 pb-8 z-10">
                  {gameOptions.map((opt, i) => {
-                   let statusClass = "bg-slate-900 border-slate-800 hover:border-slate-600 text-slate-300";
+                   let statusClass = "glass hover:bg-slate-800/60 text-slate-300";
                    if (quizFeedback?.id === opt.id) {
                       statusClass = quizFeedback.status === 'correct' 
                         ? "bg-emerald-600 border-emerald-500 text-white ring-4 ring-emerald-500/20 scale-[1.02]" 
@@ -1020,7 +1072,7 @@ const App = () => {
                      <button
                        key={i}
                        onClick={() => handleQuizAnswer(opt)}
-                       className={`border-2 p-5 rounded-2xl font-bold text-lg transition-all duration-200 text-left active:scale-95 shadow-lg ${statusClass} animate-slide-up`}
+                       className={`border p-5 rounded-2xl font-bold text-lg transition-all duration-200 text-left active:scale-95 shadow-lg ${statusClass} animate-slide-up`}
                        style={{animationDelay: `${i * 0.1}s`}}
                      >
                        {opt.uz}
@@ -1040,7 +1092,7 @@ const App = () => {
                    <Headphones size={48} className="text-white group-hover:rotate-12 transition-transform" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white mb-1">Eshiting & Yozing</h2>
+                  <h2 className="text-2xl font-black text-white mb-1 glow-text">Eshiting & Yozing</h2>
                   <p className="text-sm text-slate-500">Inglizcha so'zni kiriting</p>
                 </div>
                 <form onSubmit={handleTypingSubmit} className="relative">
@@ -1048,9 +1100,9 @@ const App = () => {
                      autoFocus 
                      value={inputVal} 
                      onChange={e => { setInputVal(e.target.value); if(typingFeedback === 'wrong') setTypingFeedback(null); }} 
-                     className={`w-full bg-slate-900/50 border-b-4 text-center text-4xl font-black py-4 outline-none transition-all duration-300
+                     className={`w-full glass bg-transparent border-b-4 text-center text-4xl font-black py-4 outline-none transition-all duration-300 rounded-xl
                        ${typingFeedback === 'correct' ? 'border-emerald-500 text-emerald-500' : 
-                         typingFeedback === 'wrong' ? 'border-red-500 text-red-500 animate-shake' : 'border-slate-700 text-white focus:border-indigo-500 focus:bg-slate-900'}
+                         typingFeedback === 'wrong' ? 'border-red-500 text-red-500 animate-shake' : 'border-slate-700 text-white focus:border-indigo-500'}
                      `} 
                      placeholder="..." 
                    />
@@ -1072,10 +1124,10 @@ const App = () => {
              <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-900">
                 <div className="h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.8)] transition-all duration-1000 ease-linear" style={{width: `${(timer/7)*100}%`}}></div>
              </div>
-             <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[2rem] p-10 text-center shadow-2xl relative z-10 flex flex-col items-center justify-center min-h-[400px]">
+             <div className="w-full max-w-sm glass border-slate-700 rounded-[2rem] p-10 text-center shadow-2xl relative z-10 flex flex-col items-center justify-center min-h-[400px]">
                 <div className="mb-8">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Eslab qoling</span>
-                  <h2 className="text-4xl font-black text-white mt-2 mb-1">{currentCard?.uz}</h2>
+                  <h2 className="text-4xl font-black text-white mt-2 mb-1 glow-text">{currentCard?.uz}</h2>
                   <div className="h-1 w-12 bg-slate-800 rounded-full mx-auto mt-4"></div>
                 </div>
                 
@@ -1100,7 +1152,7 @@ const App = () => {
   const renderGameArcade = () => {
     const isBoss = gameMode === "boss";
     if (gameState === "success") return (
-       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in bg-slate-950">
+       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in bg-slate-950/80 z-20">
           <div className="relative mb-6">
              <div className="absolute inset-0 bg-yellow-500/20 blur-3xl rounded-full"></div>
              <Trophy size={80} className="text-yellow-400 relative z-10 animate-bounce" />
@@ -1111,7 +1163,7 @@ const App = () => {
        </div>
     );
     if (gameState === "fail") return (
-       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in bg-red-950/30 relative overflow-hidden">
+       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in bg-red-950/30 relative overflow-hidden z-20">
           <div className="absolute inset-0 bg-red-600/5 animate-pulse"></div>
           <ShieldAlert size={80} className="text-red-500 mb-4 animate-shake" />
           <h2 className="text-5xl font-black text-red-500 mb-2 tracking-tighter">GAME OVER</h2>
@@ -1123,7 +1175,7 @@ const App = () => {
        </div>
     );
     return (
-      <div className={`flex-1 flex flex-col h-full w-full max-w-lg mx-auto relative overflow-hidden ${isBoss ? 'bg-black' : 'bg-slate-950'}`}>
+      <div className={`flex-1 flex flex-col h-full w-full max-w-lg mx-auto relative overflow-hidden ${isBoss ? 'bg-black' : 'z-10'}`}>
          {/* Background Effects for Game */}
          {isBoss && <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-black to-black animate-pulse-slow pointer-events-none"></div>}
          
@@ -1136,8 +1188,8 @@ const App = () => {
             <button onClick={() => setView("dashboard")} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition"><X size={20} className="text-white"/></button>
          </div>
          <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
-            <div className={`w-full p-10 rounded-[2rem] text-center mb-8 border-4 shadow-2xl animate-pop-in ${isBoss ? 'bg-red-950/30 border-red-900' : 'bg-slate-900 border-slate-800'}`}>
-              <h2 className={`text-4xl font-black ${isBoss ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'text-white'}`}>{isBoss ? currentCard?.uz : currentCard?.en}</h2>
+            <div className={`w-full p-10 rounded-[2rem] text-center mb-8 border-4 shadow-2xl animate-pop-in ${isBoss ? 'bg-red-950/30 border-red-900' : 'glass border-slate-700'}`}>
+              <h2 className={`text-4xl font-black ${isBoss ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'text-white glow-text'}`}>{isBoss ? currentCard?.uz : currentCard?.en}</h2>
             </div>
             
             {/* Game Options Grid */}
@@ -1146,7 +1198,7 @@ const App = () => {
                  <div className="grid grid-cols-1 w-full gap-3">
                     {gameOptions.map((opt, i) => {
                       // Visual Feedback Logic for Arcade
-                      let btnClass = "bg-slate-800 border-2 border-slate-700 text-white hover:bg-indigo-600 hover:border-indigo-500";
+                      let btnClass = "glass border-slate-600 text-white hover:bg-indigo-600/50 hover:border-indigo-500";
                       if (arcadeFeedback?.id === opt.id) {
                          btnClass = arcadeFeedback.status === 'correct' 
                             ? "bg-emerald-600 border-emerald-500 text-white ring-4 ring-emerald-500/30 scale-[1.02]" 
@@ -1165,7 +1217,7 @@ const App = () => {
                  <div className="grid grid-cols-2 w-full gap-3">
                     {gameOptions.map((opt, i) => {
                        // Visual Feedback Logic for Arcade
-                      let btnClass = "bg-slate-800 border-2 border-slate-700 text-white hover:bg-indigo-600 hover:border-indigo-500";
+                      let btnClass = "glass border-slate-600 text-white hover:bg-indigo-600/50 hover:border-indigo-500";
                       if (arcadeFeedback?.id === opt.id) {
                          btnClass = arcadeFeedback.status === 'correct' 
                             ? "bg-emerald-600 border-emerald-500 text-white ring-4 ring-emerald-500/30 scale-[1.02]" 
@@ -1197,7 +1249,7 @@ const App = () => {
     const activeFile = files[activeFileId];
     const results = activeFile ? activeFile.words.filter(w => w.en.toLowerCase().includes(translatorSearch.toLowerCase()) || w.uz.toLowerCase().includes(translatorSearch.toLowerCase())) : [];
     return (
-       <div className="flex-1 flex flex-col p-4 w-full max-w-lg mx-auto animate-fade-in bg-slate-950">
+       <div className="flex-1 flex flex-col p-4 w-full max-w-lg mx-auto animate-fade-in bg-slate-950 z-10">
           <div className="flex items-center gap-2 mb-6"><button onClick={() => setView("dashboard")} className="p-2 hover:bg-slate-800 rounded-full transition"><ArrowRight className="rotate-180" /></button><h2 className="font-bold text-2xl tracking-tight">Lug'at</h2></div>
           <div className="relative mb-6">
             <Search className="absolute left-4 top-4 text-slate-500" />
@@ -1215,7 +1267,7 @@ const App = () => {
   };
 
   const renderResults = () => (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in space-y-8 bg-slate-950 relative overflow-hidden">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in space-y-8 bg-slate-950 relative overflow-hidden z-10">
        <div className="absolute inset-0 bg-emerald-500/5 animate-pulse-slow"></div>
        <div className="w-32 h-32 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 relative z-10 animate-pop-in">
           <div className="absolute inset-0 rounded-full border-4 border-emerald-500/30 animate-ping opacity-20"></div>
@@ -1236,30 +1288,44 @@ const App = () => {
 
   if (isGateOpen) {
     return (
-      <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-        {/* Animated Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[100px] animate-float"></div>
-           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[100px] animate-float" style={{animationDelay: '-3s'}}></div>
+      <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6 text-center font-sans overflow-hidden">
+        {/* PREMIUM ANIMATED BACKGROUND */}
+        <div className="absolute inset-0 z-0">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#000000_100%)]"></div>
+           <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-pulse-slow"></div>
+           
+           {/* Moving Orbs */}
+           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/30 rounded-full blur-[128px] animate-float-slow mix-blend-screen"></div>
+           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/30 rounded-full blur-[128px] animate-float-delayed mix-blend-screen"></div>
         </div>
 
-        <div className="w-full max-w-sm space-y-8 relative z-10">
-          <div className="space-y-2 animate-slide-up">
-            <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-tighter drop-shadow-lg">UMAROV.A</h1>
-            <p className="text-slate-400 font-medium">
-              {authMode === 'register' ? "Yangi hisob yaratish" : "Tizimga kirish"}
-            </p>
+        {/* CONTENT */}
+        <div className="w-full max-w-sm relative z-10 perspective-1000">
+          <div className="mb-8 space-y-2 animate-slide-up-fade">
+             <div className="relative inline-block group">
+                <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-slate-400 tracking-tighter drop-shadow-2xl cursor-default transition-all duration-500 group-hover:tracking-widest">
+                  UMAROV.A
+                </h1>
+                <div className="absolute -inset-1 bg-indigo-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
+             </div>
+             <p className="text-indigo-300/80 font-mono text-xs tracking-[0.3em] uppercase animate-pulse">
+               {authMode === 'register' ? "Secure Access System" : "Identity Verification"}
+             </p>
           </div>
           
-          <div className="bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-700/50 shadow-2xl space-y-5 animate-pop-in">
+          <div className="bg-slate-900/40 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-white/10 shadow-[0_0_50px_rgba(79,70,229,0.15)] relative overflow-hidden group hover:border-indigo-500/30 transition-colors duration-500 animate-pop-in-bounce">
+            {/* Scanning Light Effect */}
+            <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shine pointer-events-none"></div>
+            
+            {/* Form Content */}
             {authMode === 'register' ? (
-              <>
+              <div className="space-y-4">
                 <div className={`transition-transform ${isShaking ? 'animate-shake' : ''}`}>
                   <input 
                     value={regUsername} 
                     onChange={e => { setRegUsername(e.target.value); setRegError(""); }} 
-                    placeholder="Username (5-12)" 
-                    className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-white placeholder-slate-600" 
+                    placeholder="USERNAME" 
+                    className="w-full bg-slate-950/50 border border-slate-700/50 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500/50 focus:bg-slate-900 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all text-white placeholder-slate-600 tracking-widest" 
                     maxLength={12}
                   />
                 </div>
@@ -1268,22 +1334,28 @@ const App = () => {
                     type="password"
                     value={regPassword} 
                     onChange={e => { setRegPassword(e.target.value); setRegError(""); }} 
-                    placeholder="Password" 
-                    className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-white placeholder-slate-600" 
+                    placeholder="PASSWORD" 
+                    className="w-full bg-slate-950/50 border border-slate-700/50 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500/50 focus:bg-slate-900 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all text-white placeholder-slate-600 tracking-widest" 
                   />
                 </div>
-                {regError && <div className="text-red-400 text-sm font-bold bg-red-900/20 p-2 rounded-lg animate-shake">{regError}</div>}
-                <button onClick={handleRegister} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-200">Boshlash</button>
-                <div className="text-xs text-slate-400 pt-2 cursor-pointer hover:text-white transition-colors font-medium" onClick={() => setAuthMode('login')}>Avval kirganmisiz? <span className="text-indigo-400">Kirish</span></div>
-              </>
+                {regError && <div className="text-red-400 text-[10px] font-bold bg-red-900/20 p-2 rounded-lg animate-shake border border-red-500/20 uppercase tracking-wide">{regError}</div>}
+                
+                <button onClick={handleRegister} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-300 uppercase tracking-widest text-sm">
+                  Initialize
+                </button>
+                
+                <div className="text-[10px] text-slate-500 pt-2 cursor-pointer hover:text-white transition-colors font-mono tracking-wider" onClick={() => setAuthMode('login')}>
+                  ALREADY REGISTERED? <span className="text-indigo-400">LOGIN</span>
+                </div>
+              </div>
             ) : (
-              <>
+              <div className="space-y-4">
                 <div className={`transition-transform ${isShaking ? 'animate-shake' : ''}`}>
                   <input 
                     value={loginUsername} 
                     onChange={e => { setLoginUsername(e.target.value); setRegError(""); }} 
-                    placeholder="Username" 
-                    className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-white placeholder-slate-600" 
+                    placeholder="USERNAME" 
+                    className="w-full bg-slate-950/50 border border-slate-700/50 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500/50 focus:bg-slate-900 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all text-white placeholder-slate-600 tracking-widest" 
                   />
                 </div>
                 <div className={`transition-transform ${isShaking ? 'animate-shake' : ''}`}>
@@ -1291,17 +1363,43 @@ const App = () => {
                     type="password"
                     value={loginPassword} 
                     onChange={e => { setLoginPassword(e.target.value); setRegError(""); }} 
-                    placeholder="Password" 
-                    className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-white placeholder-slate-600" 
+                    placeholder="PASSWORD" 
+                    className="w-full bg-slate-950/50 border border-slate-700/50 p-4 rounded-xl text-center font-bold text-lg outline-none focus:border-indigo-500/50 focus:bg-slate-900 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all text-white placeholder-slate-600 tracking-widest" 
                   />
                 </div>
-                {regError && <div className="text-red-400 text-sm font-bold bg-red-900/20 p-2 rounded-lg animate-shake">{regError}</div>}
-                <button onClick={handleLogin} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-200">Kirish</button>
-                <div className="text-xs text-slate-400 pt-2 cursor-pointer hover:text-white transition-colors font-medium" onClick={() => setAuthMode('register')}>Yangi foydalanuvchimisiz? <span className="text-indigo-400">Ro'yxatdan o'tish</span></div>
-              </>
+                {regError && <div className="text-red-400 text-[10px] font-bold bg-red-900/20 p-2 rounded-lg animate-shake border border-red-500/20 uppercase tracking-wide">{regError}</div>}
+                
+                <button onClick={handleLogin} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-300 uppercase tracking-widest text-sm">
+                  Access System
+                </button>
+                
+                <div className="text-[10px] text-slate-500 pt-2 cursor-pointer hover:text-white transition-colors font-mono tracking-wider" onClick={() => setAuthMode('register')}>
+                  NEW USER? <span className="text-indigo-400">REGISTER</span>
+                </div>
+              </div>
             )}
           </div>
+          
+          <div className="mt-8 text-[10px] text-slate-600 font-mono animate-fade-in delay-500">
+             SECURED BY UMAROV ARCHITECTURE v7.5
+          </div>
         </div>
+        
+        <style>{`
+          @keyframes float-slow { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -30px); } }
+          @keyframes float-delayed { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, 30px); } }
+          .animate-float-slow { animation: float-slow 10s ease-in-out infinite; }
+          .animate-float-delayed { animation: float-delayed 12s ease-in-out infinite; }
+          
+          @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+          .animate-shine { animation: shine 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+          
+          @keyframes slide-up-fade { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+          .animate-slide-up-fade { animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+          @keyframes pop-in-bounce { 0% { opacity: 0; transform: scale(0.9); } 70% { transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
+          .animate-pop-in-bounce { animation: pop-in-bounce 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        `}</style>
       </div>
     );
   }
@@ -1379,6 +1477,30 @@ const App = () => {
 
         .confetti { position: fixed; width: 8px; height: 8px; z-index: 100; animation: fall linear forwards; top: -10px; }
         @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+        /* Creative Background Animation */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+        
+        /* Glassmorphism */
+        .glass {
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        /* Neon Glow */
+        .glow-text {
+          text-shadow: 0 0 10px rgba(99, 102, 241, 0.5), 0 0 20px rgba(99, 102, 241, 0.3);
+        }
       `}</style>
       
       {/* Top System Bar */}
@@ -1400,7 +1522,13 @@ const App = () => {
          </div>
       </div>
 
-      <main className="flex-1 w-full h-full flex flex-col relative overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+         <div className="absolute top-0 right-1/4 w-96 h-96 bg-yellow-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+         <div className="absolute -bottom-32 left-20 w-96 h-96 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <main className="flex-1 w-full h-full flex flex-col relative overflow-hidden z-10">
         {view === "manager" && renderManager()}
         {view === "dashboard" && renderDashboard()}
         {view === "translator" && renderTranslator()}
@@ -1413,14 +1541,14 @@ const App = () => {
       {showIOSPrompt && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6 animate-fade-in backdrop-blur-sm" onClick={() => setShowIOSPrompt(false)}>
            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-sm relative shadow-2xl text-center space-y-4 animate-pop-in" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowIOSPrompt(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
-              <div className="w-16 h-16 bg-slate-800 rounded-2xl mx-auto flex items-center justify-center"><Download className="text-indigo-500" size={32}/></div>
-              <h3 className="text-xl font-bold text-white">Ilovani O'rnatish</h3>
-              <p className="text-sm text-slate-400">iOS qurilmasiga o'rnatish uchun:</p>
-              <ol className="text-left text-sm text-slate-300 space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <li className="flex items-center gap-2"><Share size={16} className="text-blue-500"/> 1. "Ulashish" tugmasini bosing.</li>
-                <li className="flex items-center gap-2"><Plus size={16} className="text-emerald-500"/> 2. "Ekranga qo'shish" ni tanlang.</li>
-              </ol>
+             <button onClick={() => setShowIOSPrompt(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
+             <div className="w-16 h-16 bg-slate-800 rounded-2xl mx-auto flex items-center justify-center"><Download className="text-indigo-500" size={32}/></div>
+             <h3 className="text-xl font-bold text-white">Ilovani O'rnatish</h3>
+             <p className="text-sm text-slate-400">iOS qurilmasiga o'rnatish uchun:</p>
+             <ol className="text-left text-sm text-slate-300 space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+               <li className="flex items-center gap-2"><Share size={16} className="text-blue-500"/> 1. "Ulashish" tugmasini bosing.</li>
+               <li className="flex items-center gap-2"><Plus size={16} className="text-emerald-500"/> 2. "Ekranga qo'shish" ni tanlang.</li>
+             </ol>
            </div>
         </div>
       )}
@@ -1429,9 +1557,9 @@ const App = () => {
       {profileOpen && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 animate-fade-in backdrop-blur-md">
            <div className="bg-slate-900 border border-slate-700 p-8 rounded-[2rem] w-full max-w-sm relative shadow-2xl animate-pop-in">
-              <button onClick={() => setProfileOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white p-2 hover:bg-slate-800 rounded-full transition"><X size={20}/></button>
-              
-              <div className="flex flex-col items-center text-center space-y-6">
+             <button onClick={() => setProfileOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white p-2 hover:bg-slate-800 rounded-full transition"><X size={20}/></button>
+             
+             <div className="flex flex-col items-center text-center space-y-6">
                  <div className="relative">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30 p-1">
                        <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center border-4 border-transparent bg-clip-padding">
@@ -1462,7 +1590,7 @@ const App = () => {
                        <span className="text-[9px] text-slate-600 font-mono">OFFICIAL PRODUCT v6.0</span>
                     </div>
                  </div>
-              </div>
+             </div>
            </div>
         </div>
       )}
@@ -1554,33 +1682,33 @@ const App = () => {
 
                       {/* CONTROLS */}
                       <div className="grid grid-cols-2 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800/50">
-                         <div className="flex items-center gap-2">
-                            <button onClick={() => adjustUserTime(u, -60)} className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 border border-red-500/10 transition"><Minus size={14}/><span className="text-[10px] ml-1">1h</span></button>
-                            <button onClick={() => adjustUserTime(u, 60)} className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 border border-emerald-500/10 transition"><Plus size={14}/><span className="text-[10px] ml-1">1h</span></button>
-                            <input 
-                              placeholder="Min" 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-center text-xs outline-none focus:border-indigo-500 text-white"
-                              type="number"
-                              onChange={(e) => {
-                                 if(e.target.value.length > 3) return; 
-                              }}
-                              onKeyDown={(e) => {
-                                if(e.key === 'Enter') {
-                                  adjustUserTime(u, Number(e.target.value));
-                                  e.target.value = '';
-                                }
-                              }}
-                            />
-                         </div>
-                         <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => toggleProStatus(u)} 
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition w-full ${u.is_pro ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
-                            >
-                              {u.is_pro ? "REVOKE PRO" : "GIVE PRO"}
-                            </button>
-                            <button onClick={() => deleteUser(u.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white border border-red-500/10 transition"><Trash2 size={16}/></button>
-                         </div>
+                          <div className="flex items-center gap-2">
+                             <button onClick={() => adjustUserTime(u, -60)} className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 border border-red-500/10 transition"><Minus size={14}/><span className="text-[10px] ml-1">1h</span></button>
+                             <button onClick={() => adjustUserTime(u, 60)} className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 border border-emerald-500/10 transition"><Plus size={14}/><span className="text-[10px] ml-1">1h</span></button>
+                             <input 
+                               placeholder="Min" 
+                               className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-center text-xs outline-none focus:border-indigo-500 text-white"
+                               type="number"
+                               onChange={(e) => {
+                                  if(e.target.value.length > 3) return; 
+                               }}
+                               onKeyDown={(e) => {
+                                 if(e.key === 'Enter') {
+                                   adjustUserTime(u, Number(e.target.value));
+                                   e.target.value = '';
+                                 }
+                               }}
+                             />
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                             <button 
+                               onClick={() => toggleProStatus(u)} 
+                               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition w-full ${u.is_pro ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                             >
+                               {u.is_pro ? "REVOKE PRO" : "GIVE PRO"}
+                             </button>
+                             <button onClick={() => deleteUser(u.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white border border-red-500/10 transition"><Trash2 size={16}/></button>
+                          </div>
                       </div>
                    </div>
                  ))}
